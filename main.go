@@ -1,23 +1,31 @@
 package main
 
 import (
-	"net/http"
-
+	"echoframework/db"
+	"echoframework/handler"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"log"
+	"os"
 )
 
 func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.GET("/show", show)
-	e.Logger.Fatal(e.Start(":3000"))
-}
+	env := godotenv.Load()
+	if env != nil {
+		log.Fatalf("Some error occured. Err: %s", env)
+	}
 
-func show(c echo.Context) error {
-	// Get team and member from the query string
-	team := c.QueryParam("team")
-	member := c.QueryParam("member")
-	return c.String(http.StatusOK, "team:"+team+", member:"+member)
+	sql := &db.Sql{
+		Host:     os.Getenv("HOST_DB"),
+		Port:     os.Getenv("PORT_DB"),
+		UserName: os.Getenv("USERNAME_DB"),
+		Password: os.Getenv("PASSWORD_DB"),
+		DbName:   os.Getenv("DBNAME_DB"),
+	}
+	sql.Connect()
+	defer sql.Close()
+
+	e := echo.New()
+	e.GET("/", handler.Welcome)
+	e.Logger.Fatal(e.Start(":3000"))
 }
